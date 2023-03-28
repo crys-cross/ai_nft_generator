@@ -15,8 +15,9 @@ import NFT from "./abis/NFT.json";
 import config from "./config.json";
 
 function App() {
-  const [provider, setProvider] = useState(null);
-  const [account, setAccount] = useState(null);
+  const [provider, setProvider] = useState("");
+  const [account, setAccount] = useState("");
+  const [image, setImage] = useState(null);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -28,7 +29,8 @@ function App() {
 
   const submitHandler = async (e) => {
     e.preventDefault();
-    createImage();
+    // Call AI API to generate an image based on description
+    const imageData = createImage();
   };
 
   const createImage = async () => {
@@ -38,6 +40,7 @@ function App() {
     const URL =
       "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2";
 
+    // send the request
     const response = axios({
       url: URL,
       method: "POST",
@@ -52,7 +55,18 @@ function App() {
       }),
       responseType: "arraybuffer",
     });
+
+    const type = response.headers["content-type"];
+    const data = response.data;
+
+    const base64data = Buffer.from(data).toString("base64");
+    const img = `data:${type};base64` + base64data; // <-- to render it on the page
+    setImage(img);
+
+    return data;
   };
+
+  const uploadImage = async (imageData) => {};
 
   useEffect(() => {
     loadBlockchainData();
@@ -80,7 +94,7 @@ function App() {
           <input type="submit" value="Create & Mint"></input>
         </form>
         <div className="image">
-          <img src="" alt="AI generated Image"></img>
+          <img src={image} alt="AI generated Image"></img>
         </div>
       </div>
       <p>
