@@ -17,20 +17,39 @@ import config from "./config.json";
 function App() {
   const [provider, setProvider] = useState("");
   const [account, setAccount] = useState("");
-  const [image, setImage] = useState(null);
+  const [nft, setNFT] = useState(null);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [image, setImage] = useState(null);
+  const [url, setURL] = useState(null);
 
   const loadBlockchainData = async () => {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     setProvider(provider);
+
+    const network = await provider.getNetwork();
+
+    const nft = new ethers.Contract(
+      config[network.chainId].nft.address,
+      NFT,
+      provider
+    );
+    setNFT(nft);
+
+    const name = await nft.name();
+    console.log("name: ", name);
   };
 
   const submitHandler = async (e) => {
     e.preventDefault();
     // Call AI API to generate an image based on description
     const imageData = createImage();
+
+    // Upload image to IPFS (NFT.Storage)
+    const url = await uploadImage(imageData);
+
+    console.log("url: ", url);
   };
 
   const createImage = async () => {
@@ -66,7 +85,27 @@ function App() {
     return data;
   };
 
-  const uploadImage = async (imageData) => {};
+  const uploadImage = async (imageData) => {
+    console.log("Uploading Image");
+
+    // Create instance to NFT.Storage
+    const nftStorage = new NFTStorage({
+      token: process.env.REACT_APP_NFT_STORAGE_API_KEY,
+    });
+
+    // Send request to store image
+    const { ipnft } = await nftStorage.store({
+      image: new File([imageData], "image.jpeg", { type: "image/jpeg" }),
+      name: name,
+      description: description,
+    });
+
+    // Save the URL
+    const url = `https://ipfs.io/ipfs/${ipnft}/ metadata.json`;
+    setURL(url);
+
+    return url;
+  };
 
   useEffect(() => {
     loadBlockchainData();
@@ -99,7 +138,7 @@ function App() {
       </div>
       <p>
         View&nbsp;
-        <a href="" target="_blank" rel="noreferrer">
+        <a href={url} target="_blank" rel="noreferrer">
           Metadata
         </a>
       </p>
