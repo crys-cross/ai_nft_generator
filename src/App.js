@@ -37,8 +37,8 @@ function App() {
     );
     setNFT(nft);
 
-    const name = await nft.name();
-    console.log("name: ", name);
+    // const name = await nft.name();
+    // console.log("name: ", name);
   };
 
   const submitHandler = async (e) => {
@@ -105,6 +105,16 @@ function App() {
     setURL(url);
 
     return url;
+  };
+
+  const mintImage = async (tokenURI) => {
+    console.log("Waiting for Mint...");
+
+    const signer = await provider.getSigner();
+    const transaction = await nft
+      .connect(signer)
+      .mint(tokenURI, { value: ethers.utils.parseEther("1") });
+    await transaction.wait();
   };
 
   useEffect(() => {
