@@ -24,6 +24,9 @@ function App() {
   const [image, setImage] = useState(null);
   const [url, setURL] = useState(null);
 
+  const [message, setMessage] = useState("");
+  const [isWaiting, setIsWaiting] = useState(false);
+
   const loadBlockchainData = async () => {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     setProvider(provider);
@@ -43,17 +46,32 @@ function App() {
 
   const submitHandler = async (e) => {
     e.preventDefault();
+
+    if (name === "" || description === "") {
+      window.alert("Please provide a name and description");
+      return;
+    }
+
+    setIsWaiting(true);
+
     // Call AI API to generate an image based on description
     const imageData = createImage();
 
     // Upload image to IPFS (NFT.Storage)
     const url = await uploadImage(imageData);
 
-    console.log("url: ", url);
+    // console.log("url: ", url);
+
+    // Mint NFT
+    await mintImage(url);
+    // console.log("sucess!");
+
+    setIsWaiting(false);
+    setMessage("");
   };
 
   const createImage = async () => {
-    console.log("Generating Image...");
+    setMessage("Generating Image...");
 
     // You can replace this with different model API's
     const URL =
@@ -86,7 +104,7 @@ function App() {
   };
 
   const uploadImage = async (imageData) => {
-    console.log("Uploading Image");
+    setMessage("Uploading Image");
 
     // Create instance to NFT.Storage
     const nftStorage = new NFTStorage({
@@ -143,7 +161,13 @@ function App() {
           <input type="submit" value="Create & Mint"></input>
         </form>
         <div className="image">
-          <img src={image} alt="AI generated Image"></img>
+          {!isWaiting && image ? (
+            <img src={image} alt="AI generated Image" />
+          ) : isWaiting ? (
+            <Spinner animation="border" />
+          ) : (
+            <></>
+          )}
         </div>
       </div>
       <p>
